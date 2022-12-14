@@ -1,0 +1,12 @@
+[submodule "lib/Adafruit_BME280_Library"]
+	path = lib/Adafruit_BME280_Library
+	url = https://github.com/adafruit/Adafruit_BME280_Library/
+[submodule "lib/Adafruit_BNO055"]
+	path = lib/Adafruit_BNO055
+	url = https://github.com/adafruit/Adafruit_BNO055/
+[submodule "lib/Adafruit_GPS"]
+	path = lib/Adafruit_GPS
+	url = https://github.com/adafruit/Adafruit_GPS/
+[submodule "lib/pixy2"]
+	path = lib/pixy2
+	url = https://github.com/charmedlabs/pixy2
