@@ -10,3 +10,9 @@
 [submodule "lib/pixy2"]
 	path = lib/pixy2
 	url = https://github.com/charmedlabs/pixy2
+[submodule "lib/Adafruit_Sensor"]
+	path = lib/Adafruit_Sensor
+	url = https://github.com/adafruit/Adafruit_Sensor
+[submodule "lib/cores"]
+	path = lib/cores
+	url = https://github.com/PaulStoffregen/cores
