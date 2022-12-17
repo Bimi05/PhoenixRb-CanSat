@@ -1,18 +1,24 @@
-[submodule "lib/Adafruit_BME280_Library"]
-	path = lib/Adafruit_BME280_Library
-	url = https://github.com/adafruit/Adafruit_BME280_Library/
 [submodule "lib/Adafruit_BNO055"]
 	path = lib/Adafruit_BNO055
 	url = https://github.com/adafruit/Adafruit_BNO055/
 [submodule "lib/Adafruit_GPS"]
 	path = lib/Adafruit_GPS
 	url = https://github.com/adafruit/Adafruit_GPS/
-[submodule "lib/pixy2"]
-	path = lib/pixy2
-	url = https://github.com/charmedlabs/pixy2
 [submodule "lib/Adafruit_Sensor"]
 	path = lib/Adafruit_Sensor
 	url = https://github.com/adafruit/Adafruit_Sensor
 [submodule "lib/cores"]
 	path = lib/cores
 	url = https://github.com/PaulStoffregen/cores
+[submodule "lib/Adafruit_BusIO"]
+	path = lib/Adafruit_BusIO
+	url = https://github.com/adafruit/Adafruit_BusIO
+[submodule "lib/SD"]
+	path = lib/SD
+	url = https://github.com/arduino-libraries/SD
+[submodule "lib/RadioHead"]
+	path = lib/RadioHead
+	url = https://github.com/PaulStoffregen/RadioHead/
+[submodule "lib/Adafruit_BME680"]
+	path = lib/Adafruit_BME680
+	url = https://github.com/adafruit/Adafruit_BME680
