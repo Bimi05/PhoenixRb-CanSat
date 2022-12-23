@@ -26,8 +26,8 @@ uint8_t detectPhase(Adafruit_BME680 BME680) {
         phase = 3;
     }
 
-    lastRecordedPhase = phase;
     lastValue = currentValue;
+    lastRecordedPhase = phase;
 
     return phase;
 }
