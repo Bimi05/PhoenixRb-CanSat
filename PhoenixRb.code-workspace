@@ -6,31 +6,15 @@
 		}
 	],
 	"settings": {
-		"files.associations": {
-			"*.tcc": "cpp",
-			"cctype": "cpp",
-			"cerrno": "cpp",
-			"cfloat": "cpp",
-			"climits": "cpp",
-			"clocale": "cpp",
-			"cmath": "cpp",
-			"cstdarg": "cpp",
-			"cstdint": "cpp",
-			"cstdio": "cpp",
-			"cstdlib": "cpp",
-			"cwchar": "cpp",
-			"cwctype": "cpp",
-			"string": "cpp",
-			"exception": "cpp",
-			"type_traits": "cpp",
-			"initializer_list": "cpp",
-			"iosfwd": "cpp",
-			"limits": "cpp",
-			"new": "cpp",
-			"cinttypes": "cpp",
-			"cstdbool": "cpp",
-			"utility": "cpp",
-			"typeinfo": "cpp"
-		}
+		"files.autoSave": "afterDelay",
+		"files.autoSaveDelay": 100
+	},
+	"extensions": {
+		"recommendations": [
+			"platformio.platformio-ide",
+			"ms-vsliveshare.vsliveshare",
+			"aaron-bond.better-comments",
+			"donjayamanne.githistory"
+		]
 	}
 }
