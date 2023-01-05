@@ -1,4 +1,3 @@
 #include <stdint.h>
-#include <Adafruit_BME680.h>
 
-uint8_t detectPhase(Adafruit_BME680 BME680);
+uint8_t detectPhase(float altitude);

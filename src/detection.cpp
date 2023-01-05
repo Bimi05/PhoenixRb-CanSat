@@ -1,33 +1,35 @@
 #include <stdint.h>
-#include <Adafruit_BME680.h>
 #include "detection.h"
 
-float lastValue = NULL;
-float currentValue = NULL;
+float lastMeasure = 0.0;
 
-uint8_t lastRecordedPhase = 0;
 uint8_t phase = 0;
-
-uint8_t detectPhase(Adafruit_BME680 BME680) {
-    if (lastValue == NULL) {
-        lastValue = BME680.readAltitude(SENSORS_PRESSURE_SEALEVELHPA);
+uint8_t detectPhase(float altitude) {
+    if (altitude != altitude) {
+        // weird way of checking I know
+        // altitude is NaN
         return 0;
     }
 
-    currentValue = BME680.readAltitude(SENSORS_PRESSURE_SEALEVELHPA);
-    if (0.0 <= abs(currentValue - lastValue) < 5.0) {
-        phase = (lastRecordedPhase == 0) ? 1 : 4;
+    if (lastMeasure == 0.0) {
+        lastMeasure = altitude;
+        return 0;
     }
 
-    if (currentValue > lastValue) {
-        phase = 2;
+    // TODO: improve and perfect after testing
+    float diff = altitude - lastMeasure;
+    if (diff >= 0.0 && diff < 3.0) {
+        // altitude hasn't changed much/at all, so we're on the ground
+        // phase 1 is before launch
+        // phase 4 is after landing
+        phase = (phase != 3) ? 1 : 4;
     }
     else {
-        phase = 3;
+        // if altitude increases (current > last) then we're in the rocket going up (phase 2)
+        // if altitude decreases (current < last) then we're falling from where the rocket launched us (phase 3)
+        phase = (altitude > lastMeasure) ? 2 : 3;
     }
 
-    lastValue = currentValue;
-    lastRecordedPhase = phase;
-
+    lastMeasure = altitude;
     return phase;
 }
