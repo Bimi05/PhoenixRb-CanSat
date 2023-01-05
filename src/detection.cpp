@@ -6,8 +6,7 @@ float lastMeasure = 0.0;
 uint8_t phase = 0;
 uint8_t detectPhase(float altitude) {
     if (altitude != altitude) {
-        // weird way of checking I know
-        // altitude is NaN
+        //* this returns true if altitude is NaN
         return 0;
     }
 
