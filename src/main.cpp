@@ -1,11 +1,10 @@
-#include <Arduino.h>
 #include <stdint.h>
-#include <SPI.h>
+#include <Arduino.h>
 #include <Adafruit_BME680.h>
 #include <Adafruit_BNO055.h>
 #include <Adafruit_GPS.h>
-#include <RH_RF95.h>
 #include <Pixy2.h>
+#include <SPI.h>
 #include <SD.h>
 
 #include "detection.h"
@@ -17,19 +16,17 @@
 Adafruit_BME680 BME680 = Adafruit_BME680();
 Adafruit_BNO055 BNO055 = Adafruit_BNO055();
 Adafruit_GPS GPS = Adafruit_GPS();
-RH_RF95 RF = RH_RF95();
+RFM96W RF = RFM96W(FREQUENCY);
 Pixy2 Cam = Pixy2();
 
 File dataFile;
 void setup() {
     Serial.begin(115200);
-
     BME680.begin();
     BNO055.begin();
-    RF.init();
     Cam.init();
+    RF.init();
 
-    RF.setFrequency(FREQUENCY);
     Cam.changeProg("video");
 
     if (SD.begin()) {
@@ -49,7 +46,7 @@ void loop() {
     char position = GPS.read();
 
     // allocate memory worth 100 string characters for data
-    char* data = (char*) malloc(100 * sizeof(char));
+    char *data = (char*) malloc(100 * sizeof(char));
     if (data != NULL) {
         memset(data, 0, 100 * sizeof(char)); //? is this necessary
         snprintf(data, 100 * sizeof(char), "%.02f %.02f %.02f", temperature, pressure, humidity);
@@ -57,10 +54,11 @@ void loop() {
             dataFile.println(data);
             dataFile.flush();
         }
-        RFsend(&RF);
+        RF.send(data);
         free(data);
     }
-
-    // if allocation failed, data is NULL
-    Serial.println("[Debug]: Failed to allocate enough memory for the mission data.");
+    else {
+        // if allocation failed, data is NULL
+        Serial.println("[Debug]: Failed to allocate enough memory for the mission data.");
+    }
 }
