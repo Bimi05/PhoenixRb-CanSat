@@ -66,10 +66,10 @@ void loop() {
     }
 
     uint8_t phase = detectPhase(BME680.readAltitude(PRESSURE));
-    if (phase == 3){
+    if (phase == 3) {
         // image recognition code (pixy2)
     }
-    else if (phase == 4){
+    else if (phase == 4) {
         // play buzzer for recovery
     }
 }
