@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include "detection.h"
 
-float lastMeasure = 0.0;
+float lastMeasure = 0.0F;
 
 uint8_t phase = 0;
 uint8_t detectPhase(float altitude) {
@@ -17,7 +17,7 @@ uint8_t detectPhase(float altitude) {
 
     // TODO: improve and perfect after testing
     float diff = altitude - lastMeasure;
-    if (diff >= 0.0 && diff < 3.0) {
+    if (diff >= 0.0F && diff < 3.0F) {
         // altitude hasn't changed much/at all, so we're on the ground
         // phase 1 is before launch
         // phase 4 is after landing

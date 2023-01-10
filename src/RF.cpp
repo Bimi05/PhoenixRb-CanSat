@@ -4,12 +4,11 @@
 #include "RF.h"
 
 class RFM96W {
-    private:
-        float frequency;
-        RH_RF95 RF = RH_RF95();
+    float frequency;
+    RH_RF95 RF = RH_RF95();
 
     public:
-        RFM96W(float freq = 0.0) {
+        RFM96W(float freq = 0.0F) {
             frequency = freq;
         }
 
@@ -18,7 +17,7 @@ class RFM96W {
                 Serial.println("[Debug]: RFM96W: Could not initialise.");
             }
 
-            if (frequency != 0.0) {
+            if (frequency != 0.0F) {
                 RF.setFrequency(frequency);
             }
             // TODO: add whatever else is needed for initialisation
