@@ -1,3 +1,3 @@
 #include <stdint.h>
 
-uint8_t detectPhase(float altitude);
+uint8_t detectPhase(float);
