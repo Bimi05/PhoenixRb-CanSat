@@ -24,5 +24,5 @@ void RFM96W::init() {
 }
 
 void RFM96W::send(const char *data) {
-    RFM.send();
+    RFM.send("Hello World!", 13);
 }
