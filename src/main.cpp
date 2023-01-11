@@ -8,7 +8,7 @@
 #include <SD.h>
 
 #include "detection.h"
-#include "RF.h"
+#include "RFM96W.h"
 
 #define FREQUENCY 434.2F
 #define PRESSURE 1013.25F //* modify value if and when needed
@@ -16,7 +16,7 @@
 Adafruit_BME680 BME680 = Adafruit_BME680();
 Adafruit_BNO055 BNO055 = Adafruit_BNO055();
 Adafruit_GPS GPS = Adafruit_GPS();
-RFM96W RF = RFM96W(FREQUENCY);
+RFM96W RFM = RFM96W(FREQUENCY);
 Pixy2I2C Cam = Pixy2I2C();
 
 File dataFile;
@@ -26,7 +26,7 @@ void setup() {
     BNO055.begin();
     GPS.begin(9600);
     Cam.init();
-    RF.init();
+    RFM.init();
 
     GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ);
     Cam.changeProg("video");
@@ -60,7 +60,7 @@ void loop() {
         dataFile.println(data);
         dataFile.flush();
     }
-    RF.send(data);
+    // RFM.send(data);
     free(data);
 
     uint8_t phase = detectPhase(BME680.readAltitude(PRESSURE));
