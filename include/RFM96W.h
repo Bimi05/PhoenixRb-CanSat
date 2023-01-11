@@ -4,7 +4,7 @@
 
 class RFM96W {
     public:
-        RFM96W(float freq = 0.0F);
+        RFM96W(float);
         void init();
-        void send(const char *data);
+        void send(const char*);
 };
