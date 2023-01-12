@@ -11,9 +11,10 @@ RFM96W::RFM96W(float freq = 0.0F) {
     frequency = freq;
 }
 
-void RFM96W::init() {
+void RFM96W::init(void) {
     if (!RFM.init()) {
-        Serial.println("[Debug]: RFM96W: Could not initialise.");
+        Serial.println("[Debug]: Could not initialise the RFM96W Sensor.");
+        while (true);
     }
 
     if (frequency != 0.0F) {

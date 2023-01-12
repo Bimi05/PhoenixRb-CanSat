@@ -5,6 +5,6 @@
 class RFM96W {
     public:
         RFM96W(float);
-        void init();
+        void init(void);
         void send(const char*);
 };
