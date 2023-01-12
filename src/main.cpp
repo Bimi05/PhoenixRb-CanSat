@@ -107,7 +107,7 @@ void loop(void) {
         dataFile.println(data);
         dataFile.flush();
     }
-    RFM.send(data);
+    // RFM.send(data);
 
     uint8_t phase = detectPhase(altitude);
     if (phase == 3) {
