@@ -22,5 +22,8 @@ void RFM96W::init(void) {
     }
 }
 
+//encryption
+
+//Sends the collected data to the ground station
 void RFM96W::send(const char *data) {}
-//Test text
+//send
