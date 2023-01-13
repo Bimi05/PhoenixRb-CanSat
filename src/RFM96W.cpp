@@ -26,13 +26,12 @@ void RFM96W::init(void) {
 //String key = "";                 //?Fix pending
 //RF.setEncryptionKey(key);
 
-
 //Sends the collected data to the ground station
 void RFM96W::send(const char *data) 
 {
     if (RF.available())
         {
-            RF.send(data, sizeof (data));
+            bool sent = RF.send((uint8_t*)data, sizeof(data));
             RF.waitPacketSent();
         }
     //RF.send("hello world", sizeof 11);
