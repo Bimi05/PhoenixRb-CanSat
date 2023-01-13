@@ -125,5 +125,3 @@ void loop(void) {
         // play buzzer for recovery
     }
 }
-
-String sentdat = data;
