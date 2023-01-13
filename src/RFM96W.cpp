@@ -27,7 +27,7 @@ void RFM96W::send(const char *data)
 {
     if (RF.available())
         {
-            bool sent = RF.send((uint8_t*)data, sizeof(data));
+            bool sent = RF.send((uint8_t*)data, sizeof());
             RF.waitPacketSent();
         }
 }
