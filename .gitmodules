@@ -22,3 +22,9 @@
 [submodule "lib/Adafruit_BME680"]
 	path = lib/Adafruit_BME680
 	url = https://github.com/adafruit/Adafruit_BME680
+[submodule "lib/Wire"]
+	path = lib/Wire
+	url = https://github.com/PaulStoffregen/Wire
+[submodule "lib/SPI"]
+	path = lib/SPI
+	url = https://github.com/PaulStoffregen/SPI
