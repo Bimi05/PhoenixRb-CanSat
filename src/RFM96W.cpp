@@ -22,8 +22,12 @@ void RFM96W::init(void) {
     }
 }
 
-//encryption
-
 //Sends the collected data to the ground station
-void RFM96W::send(const char *data) {}
-//send
+void RFM96W::send(const char *data) 
+{
+    if (RF.available())
+        {
+            bool sent = RF.send((uint8_t*)data, sizeof(data));
+            RF.waitPacketSent();
+        }
+}
