@@ -2,26 +2,26 @@
 #include <Adafruit_BME680.h>
 #include <Adafruit_BNO055.h>
 #include <Adafruit_GPS.h>
+#include <RH_RF95.h>
 #include <Pixy2I2C.h>
 #include <SPI.h>
 #include <SD.h>
 
 #include "detection.h"
-#include "RFM96W.h"
 
 #define FREQUENCY 434.2F //* frequency used for the RFM96W Sensor, change only if necessary
 #define PRESSURE 1013.25F //* sea-level pressure, used to read altitude from the BME680 Sensor
-#define DEBUG true //* debug mode, used for printing out raw sensor data
+#define DEBUG //* debug mode, used for printing out raw sensor data
 
 Adafruit_BME680 BME680 = Adafruit_BME680();
 Adafruit_BNO055 BNO055 = Adafruit_BNO055();
 Adafruit_GPS GPS = Adafruit_GPS();
-RFM96W RFM = RFM96W(FREQUENCY);
+RH_RF95 RFM = RH_RF95();
 Pixy2I2C Cam = Pixy2I2C();
 File dataFile;
 
 uint32_t timer = millis();
-char *data;
+char *data = NULL;
 
 void setup(void) {
     Serial.begin(115200);
@@ -49,7 +49,10 @@ void setup(void) {
         while (true);
     }
 
-    RFM.init();
+    if (!RFM.init()) {
+        Serial.println("[Debug]: Could not initialise the RFM96W Sensor.");
+        while (true);
+    }
 
     if (!SD.begin()) {
         Serial.println("[Debug]: Could not initialise the SD Card.");
@@ -73,6 +76,9 @@ void setup(void) {
 
     dataFile = SD.open("data.txt", FILE_WRITE);
 
+    RFM.setFrequency(FREQUENCY);
+    RFM.setModeTx(); //* will only send packets, not receive
+
     GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ); //* 10 Hz GPS read rate (subject to change)
     Cam.changeProg("video"); //* RGB detection program
 }
@@ -81,8 +87,8 @@ void loop(void) {
     /*
     * --- BME680 ACCURACY --- *
     * Temperature: ± 1.0°C
-    *  Pressure:   ± 3.0 %
-    *  Humidity:   ± 1.0 hPa
+    *  Pressure:   ± 1.0 hPa
+    *  Humidity:   ± 3.0 %
     * ----------------------- *
     */
 
@@ -107,7 +113,9 @@ void loop(void) {
         dataFile.println(data);
         dataFile.flush();
     }
-    // RFM.send(data);
+
+    RFM.send((uint8_t*) data, strlen(data));
+    RFM.waitPacketSent();
 
     uint8_t phase = detectPhase(altitude);
     if (phase == 3) {
