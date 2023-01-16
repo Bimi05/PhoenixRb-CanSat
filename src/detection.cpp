@@ -3,7 +3,7 @@
 
 float lastMeasure = 0.0F;
 
-uint8_t phase = 0;
+uint8_t phase = 0U;
 uint8_t detectPhase(float altitude) {
     /*
     * ----- PHASES ----- *
@@ -15,20 +15,20 @@ uint8_t detectPhase(float altitude) {
     */
 
     if (altitude != altitude) {
-        return 0; //! altitude is NaN
+        return 0U; //! altitude is NaN
     }
 
-    if (lastMeasure == 0.0) {
+    if (lastMeasure == 0.0F) {
         lastMeasure = altitude;
-        return 0;
+        return 0U;
     }
 
     float diff = altitude - lastMeasure;
     if (diff >= 0.0F && diff < 3.0F) {
-        phase = (phase != 3) ? 1 : 4;
+        phase = (phase != 3U) ? 1U : 4U;
     }
     else {
-        phase = (altitude > lastMeasure) ? 2 : 3;
+        phase = (altitude > lastMeasure) ? 2U : 3U;
     }
 
     lastMeasure = altitude;

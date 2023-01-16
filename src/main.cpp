@@ -24,9 +24,9 @@ uint32_t timer = millis();
 char *data = NULL;
 
 void setup(void) {
-    Serial.begin(115200);
+    Serial.begin(115200U);
     while (!Serial) {
-        delay(100); //* Wait for serial port to connect, then start up
+        delay(100U); //* Wait for serial port to connect, then start up
     }
 
     if (!BME680.begin()) {
@@ -39,12 +39,12 @@ void setup(void) {
         while (true);
     }
 
-    if (!GPS.begin(9600)) {
+    if (!GPS.begin(9600U)) {
         Serial.println("[Debug]: Could not initialise the GPS Sensor.");
         while (true);
     }
 
-    if (Cam.init() != 0) {
+    if (Cam.init() != 0U) {
         Serial.println("[Debug]: Could not initialise Pixy2.");
         while (true);
     }
@@ -59,7 +59,7 @@ void setup(void) {
         while (true);
     }
 
-    data = (char*) malloc(100 * sizeof(char));
+    data = (char*) malloc(100U * sizeof(char));
     if (!data) {
         Serial.println("[Debug]: Could not allocate memory for the mission data.");
         while (true);
@@ -78,6 +78,7 @@ void setup(void) {
 
     RFM.setFrequency(FREQUENCY);
     RFM.setModeTx(); //* will only send packets, not receive
+    RFM.setTxPower(20U, false);
 
     GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ); //* 10 Hz GPS read rate (subject to change)
     Cam.changeProg("video"); //* RGB detection program
@@ -108,19 +109,19 @@ void loop(void) {
         GPS.parse(GPS.lastNMEA());
     }
 
-    snprintf(data, 100 * sizeof(char), "%.02f %.02f %.02f %.02f %.04f %.04f", temperature, pressure, humidity, altitude, GPS.longitude, GPS.latitude);
+    snprintf(data, 100U * sizeof(char), "%.02f %.02f %.02f %.02f %.04f %.04f", temperature, pressure, humidity, altitude, GPS.longitude, GPS.latitude);
     if (dataFile) {
         dataFile.println(data);
         dataFile.flush();
     }
 
-    RFM.send((uint8_t*) data, strlen(data));
     RFM.waitPacketSent();
+    RFM.send((uint8_t*) data, strlen(data));
 
     uint8_t phase = detectPhase(altitude);
-    if (phase == 3) {
+    if (phase == 3U) {
         uint8_t red, green, blue;
-        if (Cam.video.getRGB(Cam.frameWidth / 2, Cam.frameHeight / 2, &red, &green, &blue) == 0) {
+        if (Cam.video.getRGB(Cam.frameWidth / 2U, Cam.frameHeight / 2U, &red, &green, &blue) == 0U) {
             Serial.print("Red: ");
             Serial.println(red);
             Serial.print("Green: ");
