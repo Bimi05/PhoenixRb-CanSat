@@ -23,11 +23,9 @@ void RFM96W::init(void) {
 }
 
 //Sends the collected data to the ground station
-void RFM96W::send(const char *data) 
-{
-    if (RF.available())
-        {
-            bool sent = RF.send((uint8_t*)data, sizeof(data));
-            RF.waitPacketSent();
-        }
+void RFM96W::send(const char *data) {
+    if (RF.available()) {
+        RF.send((uint8_t*) data, sizeof(data));
+        RF.waitPacketSent();
+    }
 }
