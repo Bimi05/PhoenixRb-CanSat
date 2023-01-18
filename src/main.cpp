@@ -24,45 +24,47 @@ uint32_t timer = millis();
 char *data = NULL;
 
 void setup(void) {
-    Serial.begin(115200U);
+    Serial.begin(115200);
     while (!Serial) {
-        delay(100U); //* Wait for serial port to connect, then start up
+        delay(100); //* Wait for serial port to connect, then start up
     }
 
-    if (!BME680.begin()) {
-        Serial.println("[Debug]: Could not initialise the BME680 Sensor.");
-        while (true);
-    }
+    #ifdef DEBUG
+        if (!BME680.begin()) {
+            while (true) Serial.println("[Debug]: Could not initialise the BME680 Sensor.");
+        }
 
-    if (!BNO055.begin()) {
-        Serial.println("[Debug]: Could not initialise the BNO055 Sensor.");
-        while (true);
-    }
+        if (!BNO055.begin()) {
+            while (true) Serial.println("[Debug]: Could not initialise the BNO055 Sensor.");
+        }
 
-    if (!GPS.begin(9600U)) {
-        Serial.println("[Debug]: Could not initialise the GPS Sensor.");
-        while (true);
-    }
+        if (!GPS.begin(9600)) {
+            while (true) Serial.println("[Debug]: Could not initialise the GPS Sensor.");
+        }
 
-    if (Cam.init() != 0U) {
-        Serial.println("[Debug]: Could not initialise Pixy2.");
-        while (true);
-    }
+        if (Cam.init() != 0) {
+            while (true) Serial.println("[Debug]: Could not initialise Pixy2.");
+        }
 
-    if (!RFM.init()) {
-        Serial.println("[Debug]: Could not initialise the RFM96W Sensor.");
-        while (true);
-    }
+        if (!RFM.init()) {
+            while (true) Serial.println("[Debug]: Could not initialise the RFM96W Sensor.");
+        }
 
-    if (!SD.begin()) {
-        Serial.println("[Debug]: Could not initialise the SD Card.");
-        while (true);
-    }
+        if (!SD.begin()) {
+            while (true) Serial.println("[Debug]: Could not initialise the SD Card.");
+        }
+    #else
+        BME680.begin();
+        BNO055.begin();
+        GPS.begin(9600);
+        Cam.init();
+        RFM.init();
+        SD.begin();
+    #endif
 
-    data = (char*) malloc(100U * sizeof(char));
+    data = (char*) malloc(100 * sizeof(char));
     if (!data) {
         Serial.println("[Debug]: Could not allocate memory for the mission data.");
-        while (true);
     }
 
     /*
@@ -78,9 +80,8 @@ void setup(void) {
 
     RFM.setFrequency(FREQUENCY);
     RFM.setModeTx(); //* will only send packets, not receive
-    RFM.setTxPower(20U, false);
 
-    GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ); //* 10 Hz GPS read rate (subject to change)
+    GPS.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ); //* 5 Hz GPS read rate (subject to change)
     Cam.changeProg("video"); //* RGB detection program
 }
 
@@ -98,18 +99,41 @@ void loop(void) {
     float humidity = BME680.readHumidity();
     float altitude = BME680.readAltitude(PRESSURE);
 
-    char c = GPS.read();
+    GPS.read();
     #ifdef DEBUG
-    if (c) {
-        Serial.print(c);
-    }
+        if (temperature) {
+            Serial.print("Temperature: ");
+            Serial.print(temperature);
+            Serial.println("°C");
+        }
+
+        if (pressure) {
+            Serial.print("Pressure: ");
+            Serial.print(pressure);
+            Serial.println(" hPa");
+        }
+
+        if (humidity) {
+            Serial.print("Humidity: ");
+            Serial.print(humidity);
+            Serial.println(" %");
+        }
+
+        if (altitude) {
+            Serial.print("Approx. Altitude: ");
+            Serial.print(altitude);
+            Serial.println("m");
+        }
     #endif
 
     if (GPS.newNMEAreceived()) {
+        #ifdef DEBUG
+            Serial.print(GPS.lastNMEA());
+        #endif
         GPS.parse(GPS.lastNMEA());
     }
 
-    snprintf(data, 100U * sizeof(char), "%.02f %.02f %.02f %.02f %.04f %.04f", temperature, pressure, humidity, altitude, GPS.longitude, GPS.latitude);
+    snprintf(data, 100 * sizeof(char), "%.02f %.02f %.02f %.02f %.04f %.04f", temperature, pressure, humidity, altitude, GPS.longitude, GPS.latitude);
     if (dataFile) {
         dataFile.println(data);
         dataFile.flush();
@@ -119,9 +143,9 @@ void loop(void) {
     RFM.send((uint8_t*) data, strlen(data));
 
     uint8_t phase = detectPhase(altitude);
-    if (phase == 3U) {
+    if (phase == 3) {
         uint8_t red, green, blue;
-        if (Cam.video.getRGB(Cam.frameWidth / 2U, Cam.frameHeight / 2U, &red, &green, &blue) == 0U) {
+        if (Cam.video.getRGB(Cam.frameWidth / 2, Cam.frameHeight / 2, &red, &green, &blue) == 0) {
             Serial.print("Red: ");
             Serial.println(red);
             Serial.print("Green: ");
