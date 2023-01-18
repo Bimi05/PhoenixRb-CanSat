@@ -14,7 +14,7 @@
 
 #include <RHGenericDriver.h>
 #if defined(RH_ENABLE_ENCRYPTION_MODULE) || defined(DOXYGEN)
-#include <BlockCipher.h>
+#include <Crypto/BlockCipher.h>
 
 // Undef this if trailing 0 on each enrypted message is ok.
 // This defined means a first byte of the payload is used to encode content length
