@@ -18,9 +18,8 @@
 #define RF_INT 0
 #define RF_RST 0
 
-//* Buzzer related (phase 4 // recovery)
-#define BUZ_PIN 0
-#define BUZ_FREQ 0
+//* Buzzer pin
+#define BUZZER_PIN 0
 
 Adafruit_BME680 BME680 = Adafruit_BME680();
 Adafruit_BNO055 BNO055 = Adafruit_BNO055();
@@ -157,7 +156,7 @@ void loop(void) {
 
     //* send a packet every at least 100 milliseconds (10 Hz send rate)
     uint32_t now = millis();
-    if (timer - now >= 100) {
+    if ((timer - now) >= 100) {
         RFM.send((uint8_t*) data, strlen(data));
         RFM.waitPacketSent();
         packet++;
@@ -180,6 +179,6 @@ void loop(void) {
     }
     else if (phase == 4) {
         //* call multiple times at different frequencies to play a melody
-        tone(BUZ_PIN, BUZ_FREQ, 100);
+        tone(BUZZER_PIN, 0, 100);
     }
 }
