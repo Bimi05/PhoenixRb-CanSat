@@ -16,3 +16,12 @@
 [submodule "lib/SD"]
 	path = lib/SD
 	url = https://github.com/arduino-libraries/SD
+[submodule "lib/Wire"]
+	path = lib/Wire
+	url = https://github.com/PaulStoffregen/Wire
+[submodule "lib/SPI"]
+	path = lib/SPI
+	url = https://github.com/PaulStoffregen/SPI
+[submodule "lib/RadioHead"]
+	path = lib/RadioHead
+	url = https://github.com/PaulStoffregen/RadioHead

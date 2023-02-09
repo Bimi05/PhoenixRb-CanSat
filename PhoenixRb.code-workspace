@@ -12,9 +12,11 @@
 	"extensions": {
 		"recommendations": [
 			"platformio.platformio-ide",
-			"ms-vsliveshare.vsliveshare",
+			"usernamehw.errorlens",
 			"aaron-bond.better-comments",
-			"donjayamanne.githistory"
+			"ms-vsliveshare.vsliveshare",
+			"donjayamanne.githistory",
+			"eamodio.gitlens"
 		]
 	}
 }
