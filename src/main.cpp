@@ -4,181 +4,164 @@
 #include <Adafruit_GPS.h>
 #include <RH_RF95.h>
 #include <Pixy2I2C.h>
+#include <Servo.h>
 #include <SPI.h>
 #include <SD.h>
 
-#include "detection.h"
+#include "poi.h"
+#include "phases.h"
 
-#define FREQUENCY 433.2F //* frequency used for the RFM96W Sensor, change only if necessary
-#define PRESSURE 1013.25F //* sea-level pressure, used to read altitude from the BME680 Sensor
-#define DEBUG //* debug mode, used for printing out raw sensor data
+#define SEALEVEL_PRESSURE 1013.25F
 
-//* RFM96W board pins (SPI communication)
-#define RF_CS 0
-#define RF_INT 0
-#define RF_RST 0
+#define RFM_CS 0
+#define RFM_INT 0
+#define RFM_RST 0
+#define RFM_FREQUENCY 434.2F
 
-//* Buzzer pin
-#define BUZZER_PIN 0
+#define BUZZER 0
 
 Adafruit_BME680 BME680 = Adafruit_BME680();
 Adafruit_BNO055 BNO055 = Adafruit_BNO055();
 Adafruit_GPS GPS = Adafruit_GPS();
-RH_RF95 RFM = RH_RF95(RF_CS, RF_INT);
+RH_RF95 RFM = RH_RF95(RFM_CS, RFM_INT);
 Pixy2I2C Cam = Pixy2I2C();
+Servo Servo1 = Servo();
+Servo Servo2 = Servo();
 File dataFile;
 
-uint32_t timer = millis(); //* global timer
-uint32_t packet = 1; //* packet ID (increments after every RFM transmission)
-char *data = NULL; //* buffer that will hold our mission data
-
+char *data = (char*) malloc(100 * sizeof(char));
 void setup(void) {
-    Serial.begin(9600);
     while (!Serial) {
-        delay(100);
+        Serial.begin(9600);
+    }
+    Serial.println("[Debug] Beginning initialisation...");
+
+    if (!BME680.begin()) {
+        Serial.println("[Debug] Could not initialise the BME680 Sensor.");
+    }
+    else {
+        Serial.println("[Debug] Sensor BME680 initialised!");
     }
 
-    bool BME_INIT = BME680.begin();
-    bool BNO_INIT = BNO055.begin();
-    bool GPS_INIT = GPS.begin(9600);
-    bool SD_INIT = SD.begin();
-    bool RFM_INIT = RFM.init();
-    bool PIXY_INIT = Cam.init() == 0;
+    if (!BNO055.begin()) {
+        Serial.println("[Debug] Could not initialise the BNO055 Sensor.");
+    }
+    else {
+        Serial.println("[Debug] Sensor BNO055 initialised!");
+    }
 
-    data = (char*) malloc(100 * sizeof(char));
-    dataFile = SD.open("data.txt", O_RDWR);
-    dataFile.seek(0);
+    if (!GPS.begin(9600)) {
+        Serial.println("[Debug] Could not initialise the Ultimate GPS Sensor.");
+    }
+    else {
+        GPS.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);
+        Serial.println("[Debug] Sensor Ultimate GPS initialised!");
+    }
 
-    #ifdef DEBUG
-        if (!BME_INIT) {
-            while (true) Serial.println("[Debug]: Could not initialise the BME680 Sensor.");
+    if (!SD.begin(0)) {
+        Serial.println("[Debug] Could not initialise the SD Card.");
+    }
+    else {
+        dataFile = SD.open("data.txt", O_RDWR);
+        if (dataFile) {
+            dataFile.seek(0);
+            Serial.println("[Debug] SD card initialised!");
         }
+    }
 
-        if (!BNO_INIT) {
-            while (true) Serial.println("[Debug]: Could not initialise the BNO055 Sensor.");
-        }
+    if (!RFM.init()) {
+        Serial.println("[Debug] Could not initialise the RFM9x LoRa Sensor.");
+    }
+    else {
+        pinMode(RFM_RST, OUTPUT);
+        digitalWrite(RFM_RST, LOW);
+        delay(10);
+        digitalWrite(RFM_RST, HIGH);
+        delay(10);
 
-        if (!GPS_INIT) {
-            while (true) Serial.println("[Debug]: Could not initialise the GPS Sensor.");
-        }
+        RFM.setFrequency(RFM_FREQUENCY);
+        RFM.setModeTx();
+        RFM.setTxPower(20);
+        Serial.println("[Debug] Sensor RFM9x LoRa initialised!");
+    }
 
-        if (!SD_INIT) {
-            while (true) Serial.println("[Debug]: Could not initialise the SD Card.");
-        }
+    if (Cam.init() != 0) {
+        Serial.println("[Debug] Could not initialise Pixy2.");
+    }
+    else {
+        Cam.changeProg("video");
+        Serial.println("[Debug] Camera Pixy2 initialised!");
+    }
 
-        if (!RFM_INIT) {
-            while (true) Serial.println("[Debug]: Could not initialise the RFM96W Sensor.");
-        }
-
-        if (!PIXY_INIT) {
-            while (true) Serial.println("[Debug]: Could not initialise Pixy2.");
-        }
-
-        if (!data) {
-            while (true) Serial.println("[Debug]: Could not allocate memory for the mission data.");
-        }
-
-        if (!dataFile) {
-            while (true) Serial.println("[Debug]: ");
-        }
-    #endif
-
-    //* if we've made it here, everything has been successfully initialised
-
-    pinMode(RF_RST, OUTPUT);
-    digitalWrite(RF_RST, LOW);
-    delay(100);
-    digitalWrite(RF_RST, HIGH);
-    delay(100);
-
-    RFM.setFrequency(FREQUENCY);
-    RFM.setModeTx();
-    RFM.setTxPower(20);
-
-    GPS.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);
-    Cam.changeProg("video");
-
-    //* all settings configured!
+    Serial.println("[Debug] Initialisation complete!");
+    Serial.println("----------------------------------------------------------------------");
 }
 
-void loop(void) {
-    /*
-    * --- BME680 ACCURACY --- *
-    * Temperature: ± 1.0°C
-    *  Pressure:   ± 1.0 hPa
-    *  Humidity:   ± 3.0 %
-    * ----------------------- *
-    */
+#define DEBUG_MODE
 
+uint32_t timer = millis();
+void loop(void) {
     float temperature = BME680.readTemperature();
     float pressure = BME680.readPressure();
     float humidity = BME680.readHumidity();
-    float altitude = BME680.readAltitude(PRESSURE);
+    float altitude = BME680.readAltitude(SEALEVEL_PRESSURE);
 
-    GPS.read();
-    #ifdef DEBUG
-        if (temperature) {
-            Serial.print("[Debug]: Temperature: ");
+    #ifdef DEBUG_MODE
+        if ((millis() - timer) >= 2000) {
+            Serial.print("[Debug] Temperature: ");
             Serial.print(temperature);
             Serial.println("°C");
-        }
 
-        if (pressure) {
-            Serial.print("[Debug]: Pressure: ");
+            Serial.print("[Debug] Pressure: ");
             Serial.print(pressure);
             Serial.println(" hPa");
-        }
 
-        if (humidity) {
-            Serial.print("[Debug]: Humidity: ");
+            Serial.print("[Debug] Humidity: ");
             Serial.print(humidity);
-            Serial.println(" %");
-        }
+            Serial.println("%");
 
-        if (altitude) {
-            Serial.print("[Debug]: Approx. Altitude: ");
+            Serial.print("[Debug] Approx. Altitude: ");
             Serial.print(altitude);
             Serial.println("m");
+
+            Serial.println();
         }
     #endif
 
+    GPS.read();
     if (GPS.newNMEAreceived()) {
-        #ifdef DEBUG
-            Serial.print("[Debug]: ");
+        #ifdef DEBUG_MODE
+            Serial.print("[Debug] Latest NMEA sentence: ");
             Serial.println(GPS.lastNMEA());
         #endif
         GPS.parse(GPS.lastNMEA());
     }
 
-    snprintf(data, 100 * sizeof(char), "%.02f %.02f %.02f %.02f %.04f %.04f", temperature, pressure, humidity, altitude, GPS.longitude, GPS.latitude);
+    // TODO: add encryption prefix/suffix, ID & time for data
+    uint8_t len = snprintf(data, 100 * sizeof(char), "%.02f %.02f %.02f %.02f %.04f %.04f", temperature, pressure, humidity, altitude, GPS.longitude, GPS.latitude);
+
     dataFile.println(data);
     dataFile.flush();
 
-    //* send a packet every at least 100 milliseconds (10 Hz send rate)
     uint32_t now = millis();
-    if ((timer - now) >= 100) {
-        RFM.send((uint8_t*) data, strlen(data));
+    if ((now - timer) >= 500) {
+        if (RFM.send((uint8_t*) data, len)) {
+            Serial.println("[Debug] Packet sent successfully!");
+        }
+        else {
+            Serial.println("[Debug] Packet could not be sent.");
+        }
+
         RFM.waitPacketSent();
-        packet++;
         timer = now;
     }
 
-    uint8_t phase = detectPhase(altitude);
+    uint8_t phase = detectPhase(BME680, SEALEVEL_PRESSURE);
     if (phase == 3) {
-        uint8_t red, green, blue;
-        if (Cam.video.getRGB(Cam.frameWidth / 2, Cam.frameHeight / 2, &red, &green, &blue) == 0) {
-            #ifdef DEBUG
-                Serial.print("Red: ");
-                Serial.println(red);
-                Serial.print("Green: ");
-                Serial.println(green);
-                Serial.print("Blue: ");
-                Serial.println(blue);
-            #endif
-        }
+        char* pos = findPOI(Cam);
+        moveToPOI(BNO055, Servo1, Servo2, pos);
     }
     else if (phase == 4) {
-        //* call multiple times at different frequencies to play a melody
-        tone(BUZZER_PIN, 0, 100);
+        tone(BUZZER, 0, 100);
     }
 }
