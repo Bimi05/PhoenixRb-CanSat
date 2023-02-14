@@ -11,22 +11,22 @@
 #include "poi.h"
 #include "phases.h"
 
-#define SEALEVEL_PRESSURE 1013.25F
+#define SEALEVEL_PRESSURE 1013.25F //* used for altitude calculation (BME680) - change if necessary
 
 #define RFM_CS 0
 #define RFM_INT 0
 #define RFM_RST 0
 #define RFM_FREQUENCY 434.2F
 
-#define BUZZER 0
+#define BUZ_PIN 0
 
 Adafruit_BME680 BME680 = Adafruit_BME680();
 Adafruit_BNO055 BNO055 = Adafruit_BNO055();
 Adafruit_GPS GPS = Adafruit_GPS();
 RH_RF95 RFM = RH_RF95(RFM_CS, RFM_INT);
 Pixy2I2C Cam = Pixy2I2C();
-Servo Servo1 = Servo();
-Servo Servo2 = Servo();
+Servo ServoMotor = Servo(); //* servo motor responsible for mid-air movement
+Servo ServoPlanting = Servo(); //* servo motor responsible for planting our seed
 File dataFile;
 
 char *data = (char*) malloc(100 * sizeof(char));
@@ -54,6 +54,7 @@ void setup(void) {
         Serial.println("[Debug] Could not initialise the Ultimate GPS Sensor.");
     }
     else {
+        //* 5 Hz is optimal: not too fast to deal with, not too slow to receive and process
         GPS.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);
         Serial.println("[Debug] Sensor Ultimate GPS initialised!");
     }
@@ -64,6 +65,7 @@ void setup(void) {
     else {
         dataFile = SD.open("data.txt", O_RDWR);
         if (dataFile) {
+            //* this way we will overwrite it completely because we start writing at the very beginning
             dataFile.seek(0);
             Serial.println("[Debug] SD card initialised!");
         }
@@ -73,15 +75,16 @@ void setup(void) {
         Serial.println("[Debug] Could not initialise the RFM9x LoRa Sensor.");
     }
     else {
+        //? resetting the RFM could be considered a fresh (performance-wise) boot
         pinMode(RFM_RST, OUTPUT);
         digitalWrite(RFM_RST, LOW);
-        delay(10);
+        delay(100);
         digitalWrite(RFM_RST, HIGH);
-        delay(10);
+        delay(100);
 
         RFM.setFrequency(RFM_FREQUENCY);
         RFM.setModeTx();
-        RFM.setTxPower(20);
+        RFM.setTxPower(20); //* max power for optimal transmission performance
         Serial.println("[Debug] Sensor RFM9x LoRa initialised!");
     }
 
@@ -89,6 +92,7 @@ void setup(void) {
         Serial.println("[Debug] Could not initialise Pixy2.");
     }
     else {
+        //* video program allows our image recognition algorithm to get its needed values
         Cam.changeProg("video");
         Serial.println("[Debug] Camera Pixy2 initialised!");
     }
@@ -97,7 +101,7 @@ void setup(void) {
     Serial.println("----------------------------------------------------------------------");
 }
 
-#define DEBUG_MODE
+#define DEBUG_MODE //! remove/comment out when done testing
 
 uint32_t timer = millis();
 void loop(void) {
@@ -156,12 +160,12 @@ void loop(void) {
         timer = now;
     }
 
-    uint8_t phase = detectPhase(BME680, SEALEVEL_PRESSURE);
+    uint8_t phase = detectPhase(&BME680, SEALEVEL_PRESSURE);
     if (phase == 3) {
-        char* pos = findPOI(Cam);
-        moveToPOI(BNO055, Servo1, Servo2, pos);
+        char* pos = findPOI(&Cam);
+        moveToPOI(&BNO055, &ServoMotor, pos);
     }
     else if (phase == 4) {
-        tone(BUZZER, 0, 100);
+        tone(BUZ_PIN, 0, 100);
     }
 }
