@@ -4,5 +4,5 @@
 
 #include <stdint.h>
 
-char* findPOI(Pixy2I2C& Cam);
-void moveToPOI(Adafruit_BNO055& BNO, Servo& Servo1, Servo& Servo2, const char *);
+char* findPOI(Pixy2I2C* Cam);
+void moveToPOI(Adafruit_BNO055* BNO, Servo* ServoMotor, const char *coordinates);
