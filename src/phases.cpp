@@ -2,6 +2,7 @@
 
 uint8_t phase = 1;
 bool landed = false;
+bool ascending = false;
 float measurings[5] = { 0.0F };
 
 uint8_t detectPhase(Adafruit_BME680* BME, float pressure) {
@@ -13,11 +14,19 @@ uint8_t detectPhase(Adafruit_BME680* BME, float pressure) {
         measurings[i] = BME->readAltitude(pressure);
     }
 
-    //* check measures
-    //! ascending order => phase 2
-    //! descending order => phase 3
-    //! ascending then descending or just descending => phase 3
-    //! descending then stabilising => phase 4 --- set landed to true
+    uint8_t pos = 0;
+    while (pos < 5) {
+        float diff = measurings[pos] - measurings[pos+1];
+        if (pos > 0) {
+            float diff2 = measurings[pos] - measurings[pos-1];
+        }
+
+        if (diff < 0.0F) {
+            phase = (ascending) ? 2 : 3;
+        }
+
+        pos++;
+    }
 
     return phase;
 }
