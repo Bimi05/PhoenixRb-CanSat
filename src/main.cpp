@@ -13,27 +13,29 @@
 
 #define SEALEVEL_PRESSURE 1013.25F //* used for altitude calculation (BME680) - change if necessary
 
-#define RFM_CS 0
-#define RFM_INT 0
-#define RFM_RST 0
+#define RFM_CS 10
+#define RFM_INT 8
+#define RFM_RST 7
 #define RFM_FREQUENCY 434.2F
 
-#define BUZ_PIN 0
+#define BUZ_PIN 22
+
+#define GPSSerial Serial1
 
 Adafruit_BME680 BME680 = Adafruit_BME680();
 Adafruit_BNO055 BNO055 = Adafruit_BNO055();
-Adafruit_GPS GPS = Adafruit_GPS();
+Adafruit_GPS GPS = Adafruit_GPS(&GPSSerial);
 RH_RF95 RFM = RH_RF95(RFM_CS, RFM_INT);
 Pixy2I2C Cam = Pixy2I2C();
-Servo ServoMotor = Servo(); //* servo motor responsible for mid-air movement
-Servo ServoPlanting = Servo(); //* servo motor responsible for planting our seed
+Servo ServoMotor = Servo(); //* servo motor for our controlled movement
 File dataFile;
 
-char *data = (char*) malloc(100 * sizeof(char));
+uint32_t ID = 1; //* packet ID; will be used by data analysis
+char *data = (char*) malloc(255 * sizeof(char)); //* a message of maximum 255 characters (RFM limit)
+
 void setup(void) {
-    while (!Serial) {
-        Serial.begin(9600);
-    }
+    while (!Serial);
+    Serial.begin(115200);
     Serial.println("[Debug] Beginning initialisation...");
 
     if (!BME680.begin()) {
@@ -54,19 +56,18 @@ void setup(void) {
         Serial.println("[Debug] Could not initialise the Ultimate GPS Sensor.");
     }
     else {
-        //* 5 Hz is optimal: not too fast to deal with, not too slow to receive and process
+        GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
         GPS.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);
         Serial.println("[Debug] Sensor Ultimate GPS initialised!");
     }
 
-    if (!SD.begin(0)) {
+    if (!SD.begin(23)) {
         Serial.println("[Debug] Could not initialise the SD Card.");
     }
     else {
         dataFile = SD.open("data.txt", O_RDWR);
         if (dataFile) {
-            //* this way we will overwrite it completely because we start writing at the very beginning
-            dataFile.seek(0);
+            dataFile.seek(0); //* start writing at first file byte, to overwrite everything
             Serial.println("[Debug] SD card initialised!");
         }
     }
@@ -75,16 +76,9 @@ void setup(void) {
         Serial.println("[Debug] Could not initialise the RFM9x LoRa Sensor.");
     }
     else {
-        //? resetting the RFM could be considered a fresh (performance-wise) boot
-        pinMode(RFM_RST, OUTPUT);
-        digitalWrite(RFM_RST, LOW);
-        delay(100);
-        digitalWrite(RFM_RST, HIGH);
-        delay(100);
-
         RFM.setFrequency(RFM_FREQUENCY);
         RFM.setModeTx();
-        RFM.setTxPower(20); //* max power for optimal transmission performance
+        RFM.setTxPower(20); //* max power for possibly better transmissions
         Serial.println("[Debug] Sensor RFM9x LoRa initialised!");
     }
 
@@ -92,10 +86,11 @@ void setup(void) {
         Serial.println("[Debug] Could not initialise Pixy2.");
     }
     else {
-        //* video program allows our image recognition algorithm to get its needed values
         Cam.changeProg("video");
         Serial.println("[Debug] Camera Pixy2 initialised!");
     }
+
+    ServoMotor.attach(3);
 
     Serial.println("[Debug] Initialisation complete!");
     Serial.println("----------------------------------------------------------------------");
@@ -103,69 +98,62 @@ void setup(void) {
 
 #define DEBUG_MODE //! remove/comment out when done testing
 
-uint32_t timer = millis();
 void loop(void) {
-    float temperature = BME680.readTemperature();
-    float pressure = BME680.readPressure();
-    float humidity = BME680.readHumidity();
-    float altitude = BME680.readAltitude(SEALEVEL_PRESSURE);
+    uint32_t start = millis();
+    memset(data, '-', 255 * sizeof(char));
 
-    #ifdef DEBUG_MODE
-        if ((millis() - timer) >= 2000) {
-            Serial.print("[Debug] Temperature: ");
-            Serial.print(temperature);
-            Serial.println("°C");
+    BME680.performReading();
 
-            Serial.print("[Debug] Pressure: ");
-            Serial.print(pressure);
-            Serial.println(" hPa");
+    float temp = BME680.temperature;
+    float pres = BME680.pressure / 100.0F;
+    float hum = BME680.humidity;
+    float alt = BME680.readAltitude(SEALEVEL_PRESSURE);
 
-            Serial.print("[Debug] Humidity: ");
-            Serial.print(humidity);
-            Serial.println("%");
-
-            Serial.print("[Debug] Approx. Altitude: ");
-            Serial.print(altitude);
-            Serial.println("m");
-
-            Serial.println();
+    for (uint8_t i=0; i<2; i++) {
+        while (!GPS.newNMEAreceived()) {
+            GPS.read();
         }
-    #endif
-
-    GPS.read();
-    if (GPS.newNMEAreceived()) {
-        #ifdef DEBUG_MODE
-            Serial.print("[Debug] Latest NMEA sentence: ");
-            Serial.println(GPS.lastNMEA());
-        #endif
-        GPS.parse(GPS.lastNMEA());
     }
+    GPS.parse(GPS.lastNMEA());
 
-    // TODO: add encryption prefix/suffix, ID & time for data
-    uint8_t len = snprintf(data, 100 * sizeof(char), "%.02f %.02f %.02f %.02f %.04f %.04f", temperature, pressure, humidity, altitude, GPS.longitude, GPS.latitude);
+    float lat = (GPS.lat == 'S') ? -(GPS.latitude) : GPS.latitude;
+    float lon = (GPS.lon == 'W') ? -(GPS.longitude) : GPS.longitude;
+
+    float time = static_cast<float>(millis() / 1000.0F);
+    uint8_t len = snprintf(data, 255 * sizeof(char), "PRb:%li %.01f %.02f %.02f %.02f %.02f %.04f %.04f", ID, time, temp, pres, hum, alt, lat, lon);
+
+
+    RFM.send((uint8_t*) data, len);
 
     dataFile.println(data);
     dataFile.flush();
 
-    uint32_t now = millis();
-    if ((now - timer) >= 500) {
-        if (RFM.send((uint8_t*) data, len)) {
-            Serial.println("[Debug] Packet sent successfully!");
-        }
-        else {
-            Serial.println("[Debug] Packet could not be sent.");
-        }
+    #ifdef DEBUG_MODE
+        Serial.println(data);
+    #endif
 
-        RFM.waitPacketSent();
-        timer = now;
-    }
-
-    uint8_t phase = detectPhase(&BME680, SEALEVEL_PRESSURE);
+    // uint8_t phase = detectPhase(&BME680, SEALEVEL_PRESSURE);
+    uint8_t phase = 1;
     if (phase == 3) {
         char* pos = findPOI(&Cam);
         moveToPOI(&BNO055, &ServoMotor, pos);
     }
     else if (phase == 4) {
-        tone(BUZ_PIN, 0, 100);
+        static uint32_t last_beat = millis();
+        if ((millis() - last_beat) > 2000) {
+            last_beat = millis();
+
+            //! melody to be determined :)
+            tone(BUZ_PIN, 3322.438F, 500);
+            tone(BUZ_PIN, 2489.016F, 500);
+            tone(BUZ_PIN, 1661.219F, 500);
+            tone(BUZ_PIN, 1864.655F, 500);
+        }
+    }
+
+
+    ID++;
+    if ((millis() - start) < 100) {
+        delay(100 - (millis() - start));
     }
 }
