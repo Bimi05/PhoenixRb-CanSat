@@ -25,3 +25,6 @@
 [submodule "lib/RadioHead"]
 	path = lib/RadioHead
 	url = https://github.com/PaulStoffregen/RadioHead
+[submodule "lib/TeensyThreads"]
+	path = lib/TeensyThreads
+	url = https://github.com/ftrias/TeensyThreads
