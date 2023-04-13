@@ -2,31 +2,27 @@
 
 uint8_t phase = 1;
 bool landed = false;
-bool ascending = false;
-float measurings[5] = { 0.0F };
 
 uint8_t detectPhase(Adafruit_BME680* BME, float pressure) {
     if (landed == true) {
         return 4;
     }
 
-    for (int i=0; i<5; i++) {
-        measurings[i] = BME->readAltitude(pressure);
+    float measurings[2] = { 0.0F };
+    measurings[0] = BME->readAltitude(pressure);
+    measurings[1] = BME->readAltitude(pressure);
+
+    //* diff > 0 means cansat is going up
+    //* diff < 0 means cansat is going down
+    //! a maximum difference of max ± 1.0 for phases 1 & 4
+    //! must be applied, for there are extremely subtle differences when stationary
+    float diff = measurings[1] - measurings[0];
+
+    if ((diff > -1.0F && diff < 1.0F) && phase == 3) {
+        landed = true;
+        return 4;
     }
 
-    uint8_t pos = 0;
-    while (pos < 5) {
-        float diff = measurings[pos] - measurings[pos+1];
-        if (pos > 0) {
-            float diff2 = measurings[pos] - measurings[pos-1];
-        }
-
-        if (diff < 0.0F) {
-            phase = (ascending) ? 2 : 3;
-        }
-
-        pos++;
-    }
-
+    phase = (diff > 0.0F) ? 2 : 3;
     return phase;
 }
