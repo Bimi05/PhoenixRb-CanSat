@@ -1,6 +1,6 @@
 #include "phases.h"
 
-uint8_t phase = 1;
+uint8_t phase = 0;
 bool landed = false;
 
 uint8_t detectPhase(Adafruit_BME680* BME, float pressure) {
@@ -8,7 +8,7 @@ uint8_t detectPhase(Adafruit_BME680* BME, float pressure) {
         return 4;
     }
 
-    float measurings[2] = { 0.0F };
+    float measurings[2];
     measurings[0] = BME->readAltitude(pressure);
     measurings[1] = BME->readAltitude(pressure);
 
@@ -21,6 +21,9 @@ uint8_t detectPhase(Adafruit_BME680* BME, float pressure) {
     if ((diff > -1.0F && diff < 1.0F) && phase == 3) {
         landed = true;
         return 4;
+    }
+    else if ((diff > -1.0F && diff < 1.0F)) {
+        return 1;
     }
 
     phase = (diff > 0.0F) ? 2 : 3;
