@@ -175,6 +175,7 @@ void setup(void) {
     }
 
     ServoMotor.attach(3);
+    ServoMotor.write(90);
 
     initTime = millis();
     threads.addThread(mainMission);
