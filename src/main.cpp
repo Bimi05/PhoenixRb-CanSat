@@ -159,7 +159,6 @@ void setup(void) {
     }
     else {
         RFM.setFrequency(RFM_FREQUENCY);
-        RFM.setModeTx();
         RFM.setTxPower(20); //* max power for possibly better transmissions
         play(BUZ_PIN, 4000, 500);
         delay(1000);
@@ -195,7 +194,23 @@ void loop(void) {
     uint8_t phase = detectPhase(&BME680, ground_pressure);
     if (phase == 3 && (BME680.readAltitude(ground_pressure) < 800.0F)) {
         findPOI(&Cam);
-        move(&ServoMotor);
+        move(&BNO055, &ServoMotor, false);
+        sendPosition(&GPS, &RFM);
+
+        //* receive orders from ground station, and move where necessary
+        uint8_t buf[255];
+        uint8_t len = sizeof(buf);
+
+        if (RFM.recv(buf, &len)) {
+            if (buf[0] == 'P') {
+                setDesiredPOI(buf[len-1]);
+
+                uint8_t response[] = "PRb_INFO: PoI information received. Moving.";
+                RFM.send(response, sizeof(response));
+
+                move(&BNO055, &ServoMotor, true);
+            }
+        }
     }
     else if (phase == 4) {
         static uint32_t last_beat = millis();
