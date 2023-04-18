@@ -18,7 +18,7 @@ uint8_t detectPhase(Adafruit_BME680* BME, float pressure) {
     //! must be applied, for there are extremely subtle differences when stationary
     float diff = measurings[1] - measurings[0];
 
-    if ((diff > -1.0F && diff < 1.0F) && phase == 3) {
+    if ((diff > -1.0F) && (diff < 1.0F) && (phase == 3)) {
         landed = true;
         return 4;
     }
