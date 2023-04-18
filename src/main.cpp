@@ -1,3 +1,4 @@
+#include <cstring>
 #include <Arduino.h>
 
 #include <Adafruit_BME680.h>
@@ -80,7 +81,7 @@ void mainMission(void) {
             alt = BME680.readAltitude(ground_pressure);
         }
 
-        uint8_t len = snprintf(data, 255 * sizeof(char), "PRb:%li %.01f %.02f %.02f %.02f %.02f %.04f %.04f", ID, time, temp, pres, hum, alt, lat, lon);
+        uint8_t len = snprintf(data, 255 * sizeof(char), "PRb_DATA:%li %.01f %.02f %.02f %.02f %.02f %.04f %.04f", ID, time, temp, pres, hum, alt, lat, lon);
         RFM.send((uint8_t*) data, len);
 
         if (dataFile) {
@@ -199,11 +200,11 @@ void loop(void) {
         sendPosition(&GPS, &RFM);
 
         //* receive orders from ground station, and move where necessary
-        uint8_t buf[255];
+        uint8_t buf[50];
         uint8_t len = sizeof(buf);
 
         if (RFM.recv(buf, &len)) {
-            if (buf[0] == 'P') {
+            if (strstr((char*) buf, "PRb_PoI")) {
                 setDesiredPOI(buf[len-1]);
 
                 uint8_t response[] = "PRb_INFO: PoI information received. Moving.";
