@@ -81,7 +81,7 @@ void sendPosition(Adafruit_GPS* GPS, RH_RF95* RFM) {
     float lat = (GPS->lat == 'S') ? -(GPS->latitude) : GPS->latitude;
     float lon = (GPS->lon == 'W') ? -(GPS->longitude) : GPS->longitude;
 
-    uint8_t len = snprintf(pos, 25 * sizeof(char), "PoI:%.04f,%.04f", lat, lon);
+    uint8_t len = snprintf(pos, 25 * sizeof(char), "PRb_PoI: (%i) %.04f,%.04f", poi_index + 1, lat, lon);
     RFM->send((uint8_t*) pos, len);
     RFM->waitPacketSent();
     sendPOI = false;
