@@ -35,7 +35,6 @@ void findAverageValues(Pixy2I2C* Cam) {
     avg_blue /= (Cam->frameHeight * Cam->frameWidth);
 }
 
-
 void findPOI(Pixy2I2C* Cam) {
     if (scanned) {
         return;
@@ -45,16 +44,29 @@ void findPOI(Pixy2I2C* Cam) {
 
     uint8_t num = 0;
     uint8_t r, g, b;
+
+    static uint8_t threshold = 45;
+    static uint8_t notfound = 0;
+
     for (uint16_t i=0; i<Cam->frameHeight; i++) {
         for (uint16_t j=0; i<Cam->frameWidth; i++) {
+            if (notfound >= 60) { //* for every 60 pixels of no PoI found, "ease" the requirements
+                threshold -= 3;
+            }
+
             Cam->video.getRGB(j, i, &r, &g, &b);
 
-            if (abs(r-avg_red) > 50 && abs(g-avg_green) > 50 && abs(b-avg_blue) > 50) {
+            if (abs((r-avg_red) + (g-avg_green) + (b-avg_blue)) > threshold) {
                 POIs[num][0] = (j-Cam->frameWidth);
                 POIs[num][1] = (i-Cam->frameHeight);
                 num++;
+                notfound = 0;
+            }
+            else {
+                notfound++;
             }
         }
+        notfound++;
     }
 
     scanned = true;
@@ -72,7 +84,7 @@ void sendPosition(Adafruit_GPS* GPS, RH_RF95* RFM) {
         return;
     }
 
-    memset(pos, 0, 50 * sizeof(char));
+    memset(pos, 0, 25 * sizeof(char));
     do {
         GPS->read();
     } while (!GPS->newNMEAreceived());
@@ -107,6 +119,10 @@ void move(Adafruit_BNO055* BNO, Servo* ServoMotor, bool force) {
     }
 
     float angle = atanf(y/x); //* arctan(θ) gives us the angle to turn
+    if ((angle < 0 && y < 0) || (angle > 0 && x < 0)) {
+        angle = -(angle); //* negative turns are to the left half, positive to the right
+    }
+
     float turn = 180.0F;
 
     BNO->getEvent(&BNO_data);
@@ -124,8 +140,14 @@ void move(Adafruit_BNO055* BNO, Servo* ServoMotor, bool force) {
     }
 
     ServoMotor->write((angle > 0) ? 180 : 0);
-    while (abs(turn-BNO_data.orientation.z) > 1.0F) {
+    delay((6/70) * 1000); //* 100 RPM, waiting for this much is a ~1cm turn
+    ServoMotor->write(90);
+
+    do {
         BNO->getEvent(&BNO_data);
-    }
+    } while (abs(turn-BNO_data.orientation.z) > 1.0F);
+
+    ServoMotor->write((angle > 0) ? 0 : 180);
+    delay((6/70) * 1000); //* return to normal since turn has been completed
     ServoMotor->write(90);
 }
