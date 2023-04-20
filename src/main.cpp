@@ -95,6 +95,7 @@ void mainMission(void) {
 
 void setup(void) {
     if (!BME680.begin()) {
+        Serial.println("BME not init");
         play(BUZ_PIN, 3000, 500);
         delay(1000);
     }
@@ -104,34 +105,40 @@ void setup(void) {
         }
         ground_pressure /= 5;
 
+        Serial.println("BME init");
         play(BUZ_PIN, 4000, 500);
         delay(1000);
     }
 
 
     if (!BNO055.begin()) {
+        Serial.println("BNO not init");
         play(BUZ_PIN, 3000, 500);
         delay(1000);
     }
     else {
+        Serial.println("BNO init");
         play(BUZ_PIN, 4000, 500);
         delay(1000);
     }
 
 
     if (!GPS.begin(9600)) {
+        Serial.println("GPS not init");
         play(BUZ_PIN, 3000, 500);
         delay(1000);
     }
     else {
         GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
         GPS.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);
+        Serial.println("GPS init");
         play(BUZ_PIN, 4000, 500);
         delay(1000);
     }
 
 
     if (!SD.begin(23)) {
+        Serial.println("SD not init");
         play(BUZ_PIN, 3000, 500);
         delay(1000);
     }
@@ -142,6 +149,7 @@ void setup(void) {
 
         dataFile = SD.open("data.txt", FILE_WRITE);
         if (dataFile) {
+            Serial.println("SD init");
             play(BUZ_PIN, 4000, 500);
             delay(1000);
         }
@@ -155,12 +163,14 @@ void setup(void) {
     delay(100);
 
     if (!RFM.init()) {
+        Serial.println("RFM not init");
         play(BUZ_PIN, 3000, 500);
         delay(1000);
     }
     else {
         RFM.setFrequency(RFM_FREQUENCY);
         RFM.setTxPower(20); //* max power for possibly better transmissions
+        Serial.println("RFM init");
         play(BUZ_PIN, 4000, 500);
         delay(1000);
     }
@@ -180,16 +190,6 @@ void setup(void) {
 
     initTime = millis();
     threads.addThread(mainMission);
-
-
-    play(BUZ_PIN, 3322, 500);
-    delay(1000);
-    play(BUZ_PIN, 2489, 500);
-    delay(1000);
-    play(BUZ_PIN, 1661, 500);
-    delay(1000);
-    play(BUZ_PIN, 1864, 500);
-    delay(1000);
 }
 
 void loop(void) {
